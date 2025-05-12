@@ -2,14 +2,14 @@ import time
 import MetaTrader5 as mt5
 
 class SimpleAlgo1:
-    def __init__(self, MT5trader, symbol, startPos, multiplyPos, profitMargin, interval, timeframe, thresholdPos):
+    def __init__(self, MT5trader, symbol, startPos, multiplyPos, profitMargin, interval, thresholdPos):
         self.MT5trader = MT5trader
         self.symbol = symbol
         self.startPos = startPos
         self.multiplyPos = multiplyPos
         self.profitMargin = profitMargin
         self.interval = interval
-        self.timeframe = timeframe
+        self.timeframe = mt5.TIMEFRAME_M1
         self.thresholdPos = thresholdPos
 
     def openBuy(self):
@@ -39,16 +39,14 @@ class SimpleAlgo1:
     def closeBuy(self):
         break_even = self.MT5trader.get_buy_break_even_price(self.symbol)
         if (break_even and (self.MT5trader.get_price(self.symbol)['ask'] > (break_even + self.profitMargin))):
-            lot = self.MT5trader.get_total_buy_info(self.symbol)['lots']
-            profit = round((self.MT5trader.get_price(self.symbol)['ask'] - break_even) * lot,2)
+            profit = self.MT5trader.get_total_buy_info(self.symbol)['profits']
             self.MT5trader.close_buy_positions(self.symbol)
             print(f'Closed all buy position with profit of {profit}')
         
     def closeSell(self):
         break_even = self.MT5trader.get_sell_break_even_price(self.symbol)
-        if (break_even and (self.MT5trader.get_price(self.symbol)['bid'] > (break_even + self.profitMargin))):
-            lot = self.MT5trader.get_total_sell_info(self.symbol)['lots']
-            profit = round((self.MT5trader.get_price(self.symbol)['bid'] - break_even) * lot,2)
+        if (break_even and (self.MT5trader.get_price(self.symbol)['bid'] < (break_even - self.profitMargin))):
+            profit = self.MT5trader.get_total_sell_info(self.symbol)['profits']
             self.MT5trader.close_sell_positions(self.symbol)
             print(f'Closed all sell position with profit of {profit}')
 
@@ -81,11 +79,15 @@ class SimpleAlgo1:
             time.sleep(5)
 
     def runAlgo(self):
+        till5 = 0
         while True:
             try:
                 new_candle_time = self.wait_for_new_candle()
                 self.checkOpenPositions()
-                self.checkClosePositions()
+                till5 += 1
+                if till5 >= 5:
+                    self.checkClosePositions()
+                    till5 = 0
 
             except Exception as e:
                 print("❌ Error in runAlgo:", e)

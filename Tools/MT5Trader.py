@@ -149,18 +149,20 @@ class MT5Trader:
         contract_size = symbol_info.trade_contract_size
         total_lots = 0.0
         total_value = 0.0
+        total_profit = 0.0
 
         for pos in positions:
             if pos.type == mt5.ORDER_TYPE_BUY:
                 total_lots += pos.volume
                 total_value += pos.volume * contract_size * tick.ask
+                total_profit += pos.profit
         if positions:
             lowest = min(positions, key=lambda p: p.price_open).price_open
         else:
             lowest = None
         positions = len(positions)
 
-        return {"lots": total_lots, "value": total_value, 'positions': positions, "lowest": lowest}
+        return {"lots": total_lots, "value": total_value, 'positions': positions, 'profits': total_profit, "lowest": lowest}
 
     
     def get_total_sell_info(self, symbol):
@@ -176,11 +178,13 @@ class MT5Trader:
         contract_size = symbol_info.trade_contract_size
         total_lots = 0.0
         total_value = 0.0
+        total_profit = 0.0
 
         for pos in positions:
             if pos.type == mt5.ORDER_TYPE_SELL:
                 total_lots += pos.volume
                 total_value += pos.volume * contract_size * tick.bid
+                total_profit += pos.profit
 
         if positions:
             highest = max(positions, key=lambda p: p.price_open).price_open
@@ -189,7 +193,7 @@ class MT5Trader:
         
         positions = len(positions)
 
-        return {"lots": total_lots, "value": total_value, 'positions': positions, "highest": highest}
+        return {"lots": total_lots, "value": total_value, 'positions': positions, 'profits': total_profit, "highest": highest}
     
     def get_buy_break_even_price(self, symbol):
         positions = mt5.positions_get(symbol=symbol)
